@@ -1,5 +1,5 @@
 # Sends IGMP packets from the sender to receiver and gets the Queue Build up info on the switches. 
-
+# Supports 1 switch only
 #!/usr/bin/env python3
 import random
 import socket
