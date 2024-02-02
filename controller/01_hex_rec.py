@@ -1,5 +1,5 @@
 # Retrive Queue Data from IGMP packet header //Controller file
-
+# Supports 1 switch only. 
 #!/usr/bin/env python3
 import os
 import sys
