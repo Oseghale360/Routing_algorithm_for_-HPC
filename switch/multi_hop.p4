@@ -219,4 +219,157 @@ control MyEgress(inout headers hdr,
         default_action = NoAction();
     }
 
+   apply {
+        if (hdr.ipv4.isValid()) {
+            ipv4_lpm.apply();
+        }
+    }
+}
+
+/*************************************************************************
+****************  E G R E S S   P R O C E S S I N G   *******************
+*************************************************************************/
+
+control MyEgress(inout headers hdr,
+                 inout metadata meta,
+                 inout standard_metadata_t standard_metadata) {
+        register<bit<32>>(512) input_port_pkt_count;
+        bit<32> jmax;
+
+    action add_swtrace(switchID_t swid) {
+        hdr.mri.count = hdr.mri.count + 1;
+        hdr.swtraces.push_front(1);
+        hdr.swtraces[0].setValid();
+        hdr.swtraces[0].swid = swid;
+
+        input_port_pkt_count.read(jmax, (bit<32>) 0);
+        hdr.swtraces[0].qdepth = (qdepth_t) jmax;
+        //hdr.my_meta.deq_qdepth = (bit<32>) jmax;
+        jmax = 0;
+        input_port_pkt_count.write((bit<32>) 0, jmax);
+
+        //hdr.swtraces[0].qdepth = (qdepth_t) 333; //standard_metadata.deq_qdepth;
+
+        hdr.ipv4.ihl = hdr.ipv4.ihl + 2;
+        hdr.ipv4_option.optionLength = hdr.ipv4_option.optionLength + 8;
+        hdr.ipv4.totalLen = hdr.ipv4.totalLen + 8;
+    }
+
+    table swtrace {
+        actions = {
+            add_swtrace;
+            NoAction;
+        }
+        default_action = NoAction();
+    }
+   apply {
+        if (hdr.ipv4.isValid()) {
+            ipv4_lpm.apply();
+        }
+    }
+}
+
+/*************************************************************************
+****************  E G R E S S   P R O C E S S I N G   *******************
+*************************************************************************/
+
+control MyEgress(inout headers hdr,
+                 inout metadata meta,
+                 inout standard_metadata_t standard_metadata) {
+        register<bit<32>>(512) input_port_pkt_count;
+        bit<32> jmax;
+
+    action add_swtrace(switchID_t swid) {
+        hdr.mri.count = hdr.mri.count + 1;
+        hdr.swtraces.push_front(1);
+        hdr.swtraces[0].setValid();
+        hdr.swtraces[0].swid = swid;
+
+        input_port_pkt_count.read(jmax, (bit<32>) 0);
+        hdr.swtraces[0].qdepth = (qdepth_t) jmax;
+        //hdr.my_meta.deq_qdepth = (bit<32>) jmax;
+        jmax = 0;
+        input_port_pkt_count.write((bit<32>) 0, jmax);
+
+        //hdr.swtraces[0].qdepth = (qdepth_t) 333; //standard_metadata.deq_qdepth;
+
+        hdr.ipv4.ihl = hdr.ipv4.ihl + 2;
+        hdr.ipv4_option.optionLength = hdr.ipv4_option.optionLength + 8;
+        hdr.ipv4.totalLen = hdr.ipv4.totalLen + 8;
+    }
+
+    table swtrace {
+        actions = {
+            add_swtrace;
+            NoAction;
+        }
+        default_action = NoAction();
+    }
+   apply {
+
+        input_port_pkt_count.read(jmax, (bit<32>) 0);
+        if (((bit<32>)standard_metadata.enq_qdepth > (bit<32>)jmax))     {
+        jmax = (bit<32>)standard_metadata.enq_qdepth;
+        }
+        input_port_pkt_count.write((bit<32>) 0, jmax);
+
+
+        //if (hdr.mri.isValid()) {
+        if ((hdr.ipv4.protocol != 0x01) && (hdr.ipv4.protocol != 0x6) && (hdr.ipv4.protocol!= 0x11)) {
+            swtrace.apply();
+        }
+    }
+}
+
+/*************************************************************************
+*************   C H E C K S U M    C O M P U T A T I O N   **************
+*************************************************************************/
+
+control MyComputeChecksum(inout headers hdr, inout metadata meta) {
+     apply {
+        update_checksum(
+            hdr.ipv4.isValid(),
+            { hdr.ipv4.version,
+              hdr.ipv4.ihl,
+              hdr.ipv4.diffserv,
+              hdr.ipv4.totalLen,
+              hdr.ipv4.identification,
+              hdr.ipv4.flags,
+              hdr.ipv4.fragOffset,
+              hdr.ipv4.ttl,
+              hdr.ipv4.protocol,
+              hdr.ipv4.srcAddr,
+              hdr.ipv4.dstAddr },
+            hdr.ipv4.hdrChecksum,
+            HashAlgorithm.csum16);
+    }
+}
+
+/*************************************************************************
+***********************  D E P A R S E R  *******************************
+*************************************************************************/
+
+
+control MyDeparser(packet_out packet, in headers hdr) {
+    apply {
+        packet.emit(hdr.ethernet);
+        packet.emit(hdr.ipv4);
+        packet.emit(hdr.ipv4_option);
+        packet.emit(hdr.mri);
+        packet.emit(hdr.swtraces);
+    }
+}
+
+/*************************************************************************
+***********************  S W I T C H  *******************************
+*************************************************************************/
+
+V1Switch(
+MyParser(),
+MyVerifyChecksum(),
+MyIngress(),
+MyEgress(),
+MyComputeChecksum(),
+MyDeparser()
+) main;
 
