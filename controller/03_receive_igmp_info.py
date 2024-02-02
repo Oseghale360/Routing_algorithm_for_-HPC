@@ -1,3 +1,5 @@
+# Receives IGMP packets with Queue Build up info and writes them to a file. 
+
 #!/usr/bin/env python3
 import sys
 
