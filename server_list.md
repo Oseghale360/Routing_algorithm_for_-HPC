@@ -7,3 +7,10 @@
 5. Server4 - 132.249.252.174 - 192.168.11.10/24
 6. user1 - 132.249.252.148 - 192.168.3.10/24
 7. user2 - 132.249.252.189 - 192.168.4.10/24
+
+| Computer Name | Public IP | Local IP |
+|----------|----------|----------|
+| Row 1, Col 1 | Row 1, Col 2 | Row 1, Col 3 |
+| Row 2, Col 1 | Row 2, Col 2 | Row 2, Col 3 |
+| Row 3, Col 1 | Row 3, Col 2 | Row 3, Col 3 |
+
